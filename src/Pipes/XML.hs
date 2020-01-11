@@ -76,8 +76,7 @@ insideTag
 insideTag t inside = do
     x <- await
     case x of
-        Tin c -> case c == t of
-            True -> do
+        Tin c -> if c == t then do
                 m <- getAttrs
                 (>->)
                     do  breakP (\x -> x ^? _Tout == Just c) >> pure mempty
@@ -85,7 +84,7 @@ insideTag t inside = do
                             r Stop   = forever await
                         r Loop
                         
-            False -> insideTag t inside
+            else insideTag t inside
         _ -> insideTag t inside
 
 
@@ -95,7 +94,7 @@ newtype CPipe a b m x = CPipe (ContT Loop (Pipe a b m) x)
 
 -- | interpret the resulting pipe
 renderPipe :: Functor m => CPipe a b m Loop -> Pipe a b m Loop
-renderPipe (CPipe f) = runContT f return
+renderPipe (CPipe f) = evalContT f
 
 -- | promote a pipe operation
 pipe :: Functor m => Pipe a b m x -> CPipe a b m x
@@ -145,4 +144,5 @@ getText f = do
 produceTokens :: Functor m => Pipe ByteString Token m ()
 produceTokens =  chunking Outside parseToken 
  
-
+evalContT :: Applicative m => ContT r m r -> m r
+evalContT continuation = runContT continuation pure

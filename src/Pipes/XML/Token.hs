@@ -15,6 +15,7 @@
 {-# LANGUAGE TemplateHaskell           #-}
 {-# LANGUAGE TupleSections             #-}
 {-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 
 module Pipes.XML.Token where
 
@@ -51,17 +52,18 @@ data Token = Tin Text -- ^ tag starts
 makePrisms ''Token
 
 chunking
-    :: (Show s, Show a, Functor m)
+    :: forall a s m . (Show s, Show a, Functor m)
     => s -- ^ initial parser state
     -> (s -> Parser (s, [a])) -- ^ output stream item parse
     -> Pipe ByteString a m ()
 chunking s0 p = go (parse $ p s0)
   where
+    go :: (ByteString -> Result (s, [a])) -> Pipe ByteString a m () 
     go q = do
         let loop q b = case q b of
                 Done r (s, xs) -> do
                     traverse_ yield xs
-                    if not . B.null $ r
+                    if not $ B.null r
                         then loop (parse $ p s) r
                         else go $ parse $ p s
                 f@(Partial _) -> go $ feed f
@@ -78,6 +80,7 @@ dtdElements = do
     char ']' 
     pure xs
 
+dtdElement :: Parser ByteString∏
 dtdElement = do
     skipSpace
     string "<!"
