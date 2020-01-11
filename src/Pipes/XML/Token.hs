@@ -80,7 +80,7 @@ dtdElements = do
     char ']' 
     pure xs
 
-dtdElement :: Parser ByteString∏
+dtdElement :: Parser ByteString
 dtdElement = do
     skipSpace
     string "<!"
